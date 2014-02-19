@@ -14,8 +14,20 @@ class NginxTest(unittest.TestCase):
         self.assertEqual(r.status_code, 403)
 
     def test_correct_sig(self):
-        r = requests.get(base_url, headers={"Authorization": "%s secret" % auth_scheme})
+        params = {'foo': 'bar'}
+        r = requests.get(base_url, params=params, headers={"Authorization": "%s %s" % (auth_scheme, sign_and_encode(params))})
         self.assertEqual(r.status_code, 200)
+
+# https://docs.laterpay.net/overview#SigningURLs
+def sign_and_encode(data):
+    import hashlib
+    import hmac
+    import urllib
+
+    sorted_data = [ (k,v) for k,v in iter(sorted(data.iteritems()))]
+    encoded = urllib.urlencode(sorted_data)
+    hsh = hmac.new("secret", encoded, digestmod=hashlib.sha224)
+    return hsh.hexdigest()
 
 if __name__ == '__main__':
     unittest.main()
